@@ -14,5 +14,8 @@ namespace Entity
         public String Cuenta { get; set; }
         public DateTime? FechaUltimoIntento { get; set; }
         public String Estado { get; set; }
+
+        //
+        public Carrito Carrito { get; set; }
     }
 }

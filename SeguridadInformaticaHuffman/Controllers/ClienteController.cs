@@ -180,6 +180,7 @@ namespace SeguridadInformaticaHuffman.Controllers
         }
 
         [HttpPost("")]
+        [AllowAnonymous]
         public IActionResult Registrar([FromBody] RegistroModel registroModel)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -227,6 +228,10 @@ namespace SeguridadInformaticaHuffman.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, responseModel);
                 }
 
+                CarritoBL carritoBL = new CarritoBL();
+
+                carritoBL.Registrar(ClienteId);
+
                 responseModel.Codigo = CodeEN.Success;
                 responseModel.Mensaje = "Se registró su cuenta de manera satisfactoria";
 
@@ -262,7 +267,8 @@ namespace SeguridadInformaticaHuffman.Controllers
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, cliente.ClienteId.ToString()),
-                new Claim(ClaimTypes.Email, cliente.Cuenta)
+                new Claim(ClaimTypes.Email, cliente.Cuenta),
+                new Claim(ClaimTypes.GivenName, cliente.Carrito.CarritoId.ToString())
             };
 
             var descripcionToken = new SecurityTokenDescriptor

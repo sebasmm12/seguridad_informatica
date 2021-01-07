@@ -34,6 +34,7 @@ namespace DataAccess
                         while (dr.Read())
                         {
                             cliente = new Cliente();
+                            cliente.Carrito = new Carrito();
 
                             cliente.ClienteId = dr.GetInt32(dr.GetOrdinal("ClienteId"));
 
@@ -64,6 +65,10 @@ namespace DataAccess
                             if (!dr.IsDBNull(dr.GetOrdinal("Estado")))
                             {
                                 cliente.Estado = dr.GetString(dr.GetOrdinal("Estado"));
+                            }
+                            if(!dr.IsDBNull(dr.GetOrdinal("CarritoId")))
+                            {
+                                cliente.Carrito.CarritoId = dr.GetInt32(dr.GetOrdinal("CarritoId"));
                             }
                         }
                     }
