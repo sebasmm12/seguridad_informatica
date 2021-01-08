@@ -1,6 +1,7 @@
 ﻿using BusinessLogic;
 using Entity;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SeguridadInformaticaHuffman.Controllers
@@ -23,10 +25,12 @@ namespace SeguridadInformaticaHuffman.Controllers
     public class ClienteController : ControllerBase
     {
         private readonly IConfiguration configuration;
+        private readonly IDataProtector dataProtector;
 
-        public ClienteController(IConfiguration configuration)
+        public ClienteController(IConfiguration configuration, IDataProtectionProvider dataProtector)
         {
             this.configuration = configuration;
+            this.dataProtector = dataProtector.CreateProtector("SecretKeyTarjeta");
         }
 
         [AllowAnonymous]
@@ -88,17 +92,17 @@ namespace SeguridadInformaticaHuffman.Controllers
 
                         String Token = GenerarToken(cliente);
 
-                        var clienteLogueado = new
-                        {
-                            cliente.ClienteId,
-                            cliente.Cuenta,
-                            NombreCompleto = cliente.Nombre + " " + cliente.Apellido,
-                            Token
-                        };
+                        //var clienteLogueado = new
+                        //{
+                        //    cliente.ClienteId,
+                        //    cliente.Cuenta,
+                        //    NombreCompleto = cliente.Nombre + " " + cliente.Apellido,
+                        //    Token
+                        //};
 
                         responseModel.Codigo = CodeEN.Success;
                         responseModel.Mensaje = "El cliente ha accedido a la aplicación de manera satisfactoria";
-                        responseModel.Data = clienteLogueado;
+                        responseModel.Data = Token;
 
                         return Ok(responseModel);
                     }
@@ -205,9 +209,21 @@ namespace SeguridadInformaticaHuffman.Controllers
                     return BadRequest(responseModel);
                 }
 
+
                 String contrasenaCodificada = GenerarCodigoHuffman(registroModel.Contrasena.Trim());
 
                 ClienteBL clienteBL = new ClienteBL();
+
+                Cliente clienteConsultado = clienteBL.Consultar(registroModel.Cuenta.Trim());
+
+                if(clienteConsultado != null)
+                {
+                    responseModel.Codigo = CodeEN.Error;
+                    responseModel.Mensaje = "Ya existe esta cuenta";
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, responseModel);
+                }
+
                 Cliente cliente = new Cliente
                 {
                     Cuenta = registroModel.Cuenta.Trim(),
@@ -238,6 +254,99 @@ namespace SeguridadInformaticaHuffman.Controllers
                 return Ok(responseModel);
             }
             catch (Exception)
+            {
+
+                responseModel.Codigo = CodeEN.Exception;
+                responseModel.Mensaje = "Ocurrió una excepción";
+
+                return StatusCode(StatusCodes.Status500InternalServerError, responseModel);
+            }
+        }
+
+        [HttpGet("tarjetas")]
+        public IActionResult ConsultarClienteTarjetas()
+        {
+            ResponseModel responseModel = new ResponseModel();
+
+            try
+            {
+                String cuenta = this.HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+
+                if(String.IsNullOrEmpty(cuenta))
+                {
+                    responseModel.Codigo = CodeEN.Error;
+                    responseModel.Mensaje = "Sesión expirada";
+
+                    return Unauthorized(responseModel);
+                }
+
+                ClienteBL clienteBL = new ClienteBL();
+
+                Cliente cliente = clienteBL.Consultar(cuenta);
+
+                if (cliente == null)
+                {
+                    responseModel.Codigo = CodeEN.Warning;
+                    responseModel.Mensaje = "Cuenta no encontrada";
+
+                    return BadRequest(responseModel);
+                }
+
+                ClienteTarjetaBL clienteTarjetaBL = new ClienteTarjetaBL();
+                List<ClienteTarjeta> lstclienteTarjetas = clienteTarjetaBL.Listar(cliente.ClienteId);
+
+                if (lstclienteTarjetas != null)
+                {
+                    List<TarjetaPago> lstTarjetaPagos = new List<TarjetaPago>();
+
+                    if (lstclienteTarjetas.Count > 0)
+                    {
+                        lstclienteTarjetas.ForEach(clienteTarjeta =>
+                        {
+                            TarjetaPago tarjetaPago = new TarjetaPago();
+
+                            tarjetaPago.ClienteTarjetaId = clienteTarjeta.ClienteTarjetaId;
+                            tarjetaPago.ClienteId = clienteTarjeta.ClienteId;
+
+                            String tarjetaDesencriptado = dataProtector.Unprotect(clienteTarjeta.Descripcion);
+
+                            Tarjeta tarjeta = JsonSerializer.Deserialize<Tarjeta>(tarjetaDesencriptado);
+
+                            tarjetaPago.NumeroTarjeta = tarjeta.NumeroTarjeta;
+                            tarjetaPago.Propietario = tarjeta.Propietario;
+                            tarjetaPago.CVC = tarjeta.CVC;
+                            tarjetaPago.FechaExpiracion = tarjeta.FechaExpiracion;
+
+                            lstTarjetaPagos.Add(tarjetaPago);
+                        });
+                    }
+
+                    ClienteTarjetas clienteTarjetas = new ClienteTarjetas
+                    {
+                        Cuenta = cliente.Cuenta,
+                        Nombre = cliente.Nombre,
+                        Apellido = cliente.Apellido,
+                        ClienteId = cliente.ClienteId,
+                        TarjetaPagos = lstTarjetaPagos
+                    };
+                    
+                    responseModel.Codigo = CodeEN.Success;
+                    responseModel.Mensaje = "Se listó las tarjetas de pago del usuario con éxito";
+                    responseModel.Data = clienteTarjetas;
+
+                    return Ok(responseModel);
+
+                }
+                else
+                {
+                    responseModel.Codigo = CodeEN.Error;
+                    responseModel.Mensaje = "No se pudo listar las tarjetas de pago del usuario";
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, responseModel);
+                }
+
+            }
+            catch (Exception ex)
             {
 
                 responseModel.Codigo = CodeEN.Exception;

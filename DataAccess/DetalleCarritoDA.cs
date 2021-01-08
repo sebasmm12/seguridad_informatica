@@ -134,7 +134,7 @@ namespace DataAccess
                             {
                                 detalleCarritoProducto.Foto = dr.GetString(dr.GetOrdinal("Url"));
                             }
-                            if(!dr.IsDBNull(dr.GetOrdinal("Cantidad"))
+                            if(!dr.IsDBNull(dr.GetOrdinal("Cantidad")))
                             {
                                 detalleCarritoProducto.Cantidad = dr.GetInt32(dr.GetOrdinal("Cantidad"));
                             }

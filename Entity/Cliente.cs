@@ -18,4 +18,15 @@ namespace Entity
         //
         public Carrito Carrito { get; set; }
     }
+
+
+    public  class ClienteTarjetas {
+
+        public Int32 ClienteId { get; set; }
+        public String Nombre { get; set; }
+        public String Apellido { get; set; }
+        public String Cuenta { get; set; }
+        public List<TarjetaPago> TarjetaPagos { get; set; }
+
+    }
 }

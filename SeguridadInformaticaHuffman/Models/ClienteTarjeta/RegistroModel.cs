@@ -8,7 +8,6 @@ namespace SeguridadInformaticaHuffman.Models.ClienteTarjeta
 {
     public class RegistroModel
     {
-        public Int32 ClienteId { get; set; }
         public String NumeroTarjeta { get; set; }
         public String Propietario { get; set; }
         public String CVC { get; set; }
@@ -19,12 +18,7 @@ namespace SeguridadInformaticaHuffman.Models.ClienteTarjeta
             Boolean Valid = true;
             String Mensaje = "";
 
-            if (ClienteId <= 0)
-            {
-                Valid = false;
-                Mensaje = "Ingrese el cliente";
-            }
-            else if (String.IsNullOrEmpty(NumeroTarjeta))
+            if (String.IsNullOrEmpty(NumeroTarjeta))
             {
                 Valid = false;
                 Mensaje = "Ingrese el número de tarjeta";

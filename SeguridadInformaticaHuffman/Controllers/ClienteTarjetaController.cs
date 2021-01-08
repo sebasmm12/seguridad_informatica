@@ -9,6 +9,7 @@ using SeguridadInformaticaHuffman.Models.ClienteTarjeta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -64,9 +65,21 @@ namespace SeguridadInformaticaHuffman.Controllers
 
                 String encriptacionTarjeta = dataProtector.Protect(datosTarjeta);
 
+                String clienteId = this.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                if(String.IsNullOrEmpty(clienteId))
+                {
+                    responseModel.Codigo = CodeEN.Error;
+                    responseModel.Mensaje = "Sesión expirada";
+
+                    return Unauthorized(responseModel);
+                }
+
+                Int32 ClienteId = Int32.Parse(clienteId);
+
                 ClienteTarjeta clienteTarjeta = new ClienteTarjeta
                 {
-                    ClienteId = registroModel.ClienteId,
+                    ClienteId = ClienteId,
                     Descripcion = encriptacionTarjeta
                 };
 
