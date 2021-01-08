@@ -197,6 +197,7 @@ namespace SeguridadInformaticaHuffman.Controllers
                                                 {
                                                     ProductoId = x.Key,
                                                     GeneroNombre = String.Join(",", x.Select(gn => gn.GeneroNombre)),
+                                                    Compania = x.First().Compania,
                                                     Nombre = x.First().Nombre,
                                                     EdadMinima = x.First().EdadMinima,
                                                     Lanzamiento = x.First().Lanzamiento,

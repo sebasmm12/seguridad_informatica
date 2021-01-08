@@ -43,6 +43,7 @@ namespace Entity
     public class ProductoCarousel
     {
         public Int32 ProductoId { get; set; }
+        public String Compania { get; set; }
         public String Nombre { get; set; }
         public String EdadMinima { get; set; }
         public Int32 Lanzamiento { get; set; }

@@ -227,6 +227,10 @@ namespace DataAccess
                             {
                                 productoCarousel.GeneroNombre = dr.GetString(dr.GetOrdinal("GeneroNombre"));
                             }
+                            if(!dr.IsDBNull(dr.GetOrdinal("Compania"))) 
+                            {
+                                productoCarousel.Compania = dr.GetString(dr.GetOrdinal("Compania"));
+                            }
 
                             lstProductoCarousels.Add(productoCarousel);
                         }
